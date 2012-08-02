@@ -1,56 +1,110 @@
-define(['event_bus'], function (eventBus) {
+define(['entity', 'events', 'projectile'], function (entity, events, projectile) {
     var plane = function (spec) {
-        var obj = {};
+        var obj = entity({
+                frame: spec.frame,
+                fillStyle: 'red'
+            }),
+            movingLeft = false,
+            movingRight = false,
+            movingUp = false,
+            movingDown = false,
+            firing = false,
+            firingRates = {
+                FAST: 100,
+                SLOW: 400,
+                NORMAL: 200
+            },
+            firingRate,
+            firingIntervalId = null;
+
+        document.addEventListener('keydown', function (e) {
+            switch (e.keyCode) {
+                case 65:
+                    movingLeft = true;
+                    break;
+                case 68:
+                    movingRight = true;    
+                    break;
+                case 87:
+                    movingUp = true;
+                    break;
+                case 83:
+                    movingDown = true;
+                    break;
+                case 32:
+                    firing = true;
+                    break;
+            }
+        });
+
+        document.addEventListener('keyup', function (e) {
+            switch (e.keyCode) {
+                case 65:
+                    movingLeft = false;
+                    break;
+                case 68:
+                    movingRight = false;    
+                    break;
+                case 87:
+                    movingUp = false;
+                    break;
+                case 83:
+                    movingDown = false;
+                    break;
+                case 32: 
+                    firing = false;
+                    break;
+            }
+        });
 
         function moveLeft () {
-            spec.x  -= 10;
+            obj.frame.x  -= 10;
         }
 
         function moveRight() {
-            spec.x += 10;
+            obj.frame.x += 10;
         }
 
         function moveUp () {
-            spec.y -= 10;
+            obj.frame.y -= 10;
         }
 
         function moveDown () {
-            spec.y += 10;
+            obj.frame.y += 10;
         }
 
-        obj.shoot = function () {
+        function fire () {
+            // Spawn a new projectile bullet infront of the player
+            var bullet = projectile({
+                frame: {
+                    x: obj.frame.x + (obj.frame.width / 2),
+                    y: obj.frame.y,
+                    width: 10,
+                    height: 10
+                },
+                projectileSpeed: 5
+            });
 
-        };
+            events.trigger('spawnPlayerBullet', [bullet]);
+        }
 
         obj.move = function () {
-            var key,
-                e;
-
-            for (key in eventBus.keyStates) {
-                if (eventBus.keyStates[key].state == 'down') {
-                    e = eventBus.keyStates[key].event;
-
-                    switch (e.keyCode) {
-                        case 65:
-                            moveLeft();
-                            break;
-                        case 68:
-                            moveRight();
-                            break;
-                        case 87:
-                            moveUp();
-                            break;
-                        case 83:
-                            moveDown();
-                            break;
-                    }
-                }
-            }
+            if (movingLeft) { moveLeft(); }
+            if (movingRight) { moveRight(); }
+            if (movingUp) { moveUp(); }
+            if (movingDown) { moveDown(); } 
         };
 
-        obj.draw = function (context) {
-            context.fillStyle = 'FF0000';
-            context.fillRect(spec.x, spec.y, 50, 60);
+        obj.update = function() {
+            obj.move();
+
+            if (firing && firingIntervalId === null) {
+                fire();
+                firingIntervalId = setInterval(fire, firingRate || firingRates.NORMAL);
+            } else if (!firing && firingIntervalId !== null) {
+                clearInterval(firingIntervalId);
+                firingIntervalId = null;
+            }
         };
 
         return obj;
