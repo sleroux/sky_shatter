@@ -1,4 +1,4 @@
-require(['jquery', 'game', '../lib/rAF'], function ($, game) {
+require(['jquery', 'game', 'prototypical', '../lib/rAF'], function ($, game) {
     $(function () {
         window.ss = game({
             canvasId: 'game-canvas'

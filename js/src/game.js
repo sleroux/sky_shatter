@@ -2,18 +2,23 @@ define(['utils', 'events', 'plane', 'renderer'], function (utils, events, plane,
     var game = function (spec) {
         var obj = {},
             canvas = document.getElementById(spec.canvasId),
-            entityMap = {},
             renderer = rendererFactory({
                 game: obj,
                 canvas: canvas
-            });
+            }),
+            projectiles = {},
+            projectilesIdCounter = 0,
+            player,
+            enemies = [];
 
         events.on('spawnPlayerBullet', function (bullet) {
-            if (!entityMap.hasOwnProperty('playerBullets')) {
-                entityMap.playerBullets = [];
-            }
-            
-            entityMap.playerBullets.push(bullet);
+            var bulletId = projectilesIdCounter++;
+            bullet.projectileId = bulletId;
+            projectiles[bulletId] = bullet;
+        }, obj);
+
+        events.on('destroyBullet', function (bulletId) {
+            delete projectiles[bulletId];
         }, obj);
 
         function tick () {
@@ -23,18 +28,19 @@ define(['utils', 'events', 'plane', 'renderer'], function (utils, events, plane,
         }
 
         function update () {
-            // Update entities
-            var entity,
-                key;
+            player.update();
 
-            // Draw entities
-            utils.forEach(entityMap, function (entity) {
-                entity.update();
+            utils.forEach(projectiles, function (projectile) {
+                projectile.update();
+            });
+
+            utils.forEach(enemies, function (enemy) {
+                enemy.update();
             });
         }
 
-        function setupEntities () {
-            entityMap.player = plane({
+        function setupSceneGraph () {
+            player = plane({
                 frame: {
                     x: 10,
                     y: 10,
@@ -45,12 +51,20 @@ define(['utils', 'events', 'plane', 'renderer'], function (utils, events, plane,
         }
 
         obj.start = function () {
-            setupEntities();
+            setupSceneGraph();
             tick();
         };
 
-        obj.__defineGetter__('entityMap', function () {
-            return entityMap;
+        obj.__defineGetter__('player', function () {
+            return player;
+        });
+
+        obj.__defineGetter__('enemies', function () {
+            return enemies;
+        });
+
+        obj.__defineGetter__('projectiles', function () {
+            return projectiles;
         });
 
         return obj;

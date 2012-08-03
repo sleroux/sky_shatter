@@ -13,16 +13,6 @@ define(['utils'], function (utils) {
                              entity.frame.height);
         }
 
-        function drawEntities () {  
-            utils.forEach(game.entityMap, function (entity) {
-                if (entity instanceof Array) {
-                    drawEntities(entity);
-                } else {
-                    drawEntity(entity);
-                }
-            });
-        }
-
         function drawBackground () {
             context.fillStyle = 'blue';
             context.fillRect(0, 0, canvas.width, canvas.height);
@@ -30,7 +20,16 @@ define(['utils'], function (utils) {
 
         obj.render = function () {
             drawBackground();
-            drawEntities();
+
+            drawEntity(game.player);
+
+            utils.forEach(game.enemies, function (enemy) {
+                drawEntity(enemy);
+            });
+
+            utils.forEach(game.projectiles, function (projectile) {
+                drawEntity(projectile);
+            });
         };
 
         return obj;
