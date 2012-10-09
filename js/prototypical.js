@@ -12,3 +12,10 @@ Object.prototype.keys = function () {
 
     return keys;
 };
+
+Object.prototype.defineReadOnlyField = function (field) {
+    Object.defineProperty(this, field, { 
+        "value": field, 
+        "writable": false
+    });
+};

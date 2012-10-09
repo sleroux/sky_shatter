@@ -1,7 +1,10 @@
 module.exports = function (grunt) {
     grunt.initConfig({
         lint: {
-            files: ['grunt.js', 'js/src/*.js']
+            files: ['grunt.js', 'ts/game.js']
+        },
+        jasmine: {
+            all: ['js/tests/unit/levels/spec/*']
         }
     });
 
@@ -9,4 +12,6 @@ module.exports = function (grunt) {
       grunt.log.write('Waiting...');
       this.async();
     });
+
+    grunt.loadNpmTasks('grunt-jasmine-task');
 };

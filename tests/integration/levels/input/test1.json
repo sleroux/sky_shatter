@@ -1,0 +1,21 @@
+{
+    numOfWaves: 3,
+    background: 'waterworld',
+    waveConfigs: [
+        {
+            maneuver: 'straight',
+            numOfEnemies: 2,
+            enemyType: 'boring'
+        },
+        {
+            maneuver: 'rightFlank',
+            numOfEnemies: 2,
+            enemyType: 'boring'
+        },
+        {
+            maneuver: 'leftFlank',
+            numOfEnemies: 2,
+            enemyType: 'boring'
+        }
+    ]
+}
