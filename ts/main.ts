@@ -1,4 +1,3 @@
-/// <reference path='Interfaces.ts' />
 /// <reference path='events.ts' />
 /// <reference path='utils.ts' />
 /// <reference path='Entities.ts' />
