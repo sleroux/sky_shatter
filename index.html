@@ -1,18 +1,24 @@
 <html>
 <head>
+    <meta name="viewport" content="width=device-width, user-scalable=no">
+
+    <link rel="stylesheet" href="css/styles.css" type="text/css" />
+
     <script type="text/javascript" src="js/rAF.js"></script>
     <script type="text/javascript" src="js/prototypical.js"></script>
     <script type="text/javascript" src="js/game.js"></script>
     <script type="text/javascript">
         window.onload = function () {
-            var canvas = document.getElementById('game-canvas'),
-                GameInstance = new SkyShatter.Game(canvas);
+            var gameCanvas = document.getElementById('game-canvas'),
+                hudCanvas = document.getElementById('game-overlay'),
+                GameInstance = new SkyShatter.Game(gameCanvas, hudCanvas);
 
             GameInstance.start();
         };
     </script>
 </head>
 <body>
-    <canvas id="game-canvas" width='320' height='480'></canvas>
+    <canvas id="game-canvas" width='320px' height='568px'></canvas>
+    <canvas id="game-overlay" width='320px' height='568px'></canvas>
 </body>
 </html>

@@ -13,15 +13,26 @@ module SkyShatter {
         private projectilesIdCounter = 0;
         private enemyIdCounter = 0;
         private screenWidth: number;
-        private renderer: Renderer;
+        private screenHeight: number;
+        private gameCtx: any;
+        private hudCtx: any;
+        private score: number;
+        private health: number;
 
         public enemies = {};
-        public player: IEntity;
+        public player: Entities.Entity;
         public projectiles = {};
+        public enemyProjectiles = {};
 
-        constructor (private canvas) {
-            this.renderer = new Renderer(canvas, this);
+        constructor (private gameCanvas, private hudCanvas) {
+            this.gameCtx = gameCanvas.getContext('2d');
+            this.hudCtx = hudCanvas.getContext('2d');
+
             this.screenWidth = 320;
+            this.screenHeight = 568;
+            this.score = 0;
+            this.health = 100;
+
             this.bindEventHandlers();
             this.setupSceneGraph();
         }
@@ -30,7 +41,15 @@ module SkyShatter {
             events.on('spawnPlayerBullet', function (bullet) {
                 var bulletId = this.projectilesIdCounter++;
                 bullet.ID = bulletId;
+                bullet.type = Entities.Types.PLAYER_PROJECTILE;
                 this.projectiles[bulletId] = bullet;
+            }, this);
+
+            events.on('spawnEnemyBullet', function (bullet) {
+                var bulletId = this.projectilesIdCounter++;
+                bullet.ID = bulletId;
+                bullet.type = Entities.Types.ENEMY_PROJECTILE;
+                this.enemyProjectiles[bulletId] = bullet;
             }, this);
 
             events.on('spawnEnemyPlane', function (enemy) {
@@ -43,8 +62,25 @@ module SkyShatter {
                 delete this.projectiles[bulletId];
             }, this);
 
-            events.on('destroyEnemey', function (enemyId) {
+            events.on('destroyEnemyBullet', function (bulletId) {
+                delete this.enemyProjectiles[bulletId];
+            }, this);
+
+            events.on('destroyEnemy', function (enemyId) {
                 delete this.enemies[enemyId];
+                this.score += 10;
+            }, this);
+
+            events.on('playerHit', function (entity) {
+                this.health -= 10;
+
+                if (entity.type === Entities.Types.ENEMY_PLANE) {
+                    delete this.enemies[entity.ID];
+                }
+
+                if (this.health === 0) {
+                    // Game over!
+                }
             }, this);
 
             document.addEventListener('touchstart', (e) => {
@@ -68,7 +104,7 @@ module SkyShatter {
         private setupSceneGraph() {
             this.player = new Entities.Player({
                     x: 10,
-                    y: 400,
+                    y: 500,
                     width: 25,
                     height: 35
                 },
@@ -83,6 +119,10 @@ module SkyShatter {
                 projectile.update();
             }, this);
 
+            utils.forEach(this.enemyProjectiles, function (projectile) {
+                projectile.update();
+            }, this);
+
             utils.forEach(this.enemies, function (enemy) {
                 enemy.update();
             }, this);
@@ -92,7 +132,7 @@ module SkyShatter {
             // Between 40 and screenwidth - 40
             var spawnPointX = Math.floor(Math.random() * (this.screenWidth - 80)) + 40,
             // Spawn an enemy at a random location at the top of the field of play
-                enemy = new Entities.Plane({
+                enemy = new Entities.MIG({
                         x: spawnPointX,
                         y: 20,
                         width: 25,
@@ -102,7 +142,7 @@ module SkyShatter {
                 );
 
             enemy.yVelocity = 2;
-
+            enemy.type = Entities.Types.ENEMY_PLANE;
             events.trigger('spawnEnemyPlane', [enemy]);
         }
 
@@ -131,11 +171,47 @@ module SkyShatter {
                     // Check bounding boxes of frames of projectiles with enemies
                     if (this.collision(projectile.frame, enemy.frame)) {
                         console.log('hit');
-                        events.trigger('destroyEnemey', [enemy.ID]);
+                        events.trigger('destroyEnemy', [enemy.ID]);
                         events.trigger('destroyBullet', [projectile.ID]);
                     }
                 }, this);
             }, this);
+        }
+
+        private checkEnemyCollidingWithPlayer() {
+            utils.forEach(this.enemies, function (enemy) {
+                if (this.collision(this.player.frame, enemy.frame)) {
+                    events.trigger('playerHit', [enemy]);
+                }
+            }, this);
+        }
+
+        private drawGame() {
+            this.gameCtx.fillStyle = 'blue';
+            this.gameCtx.fillRect(0, 0, this.screenWidth, this.screenHeight);
+
+            this.player.draw(this.gameCtx);
+
+            utils.forEach(this.enemies, function (enemy) {
+                enemy.draw(this.gameCtx);
+            }, this);
+
+            utils.forEach(this.projectiles, function (projectile) {
+                projectile.draw(this.gameCtx);
+            }, this);
+
+            utils.forEach(this.enemyProjectiles, function (projectile) {
+                projectile.draw(this.gameCtx);
+            }, this);
+        }
+
+        private drawHUD() {
+            this.hudCtx.fillStyle = 'grey';
+            this.hudCtx.fillRect(0, 0, this.screenWidth, 60);
+            this.hudCtx.fillStyle = 'white';
+            this.hudCtx.font = '20pt Arial';
+            this.hudCtx.fillText('Score: ' + this.score, 10, 20);
+            this.hudCtx.fillText('Health: ' + this.health, 10, 50);
         }
 
         // Check if anything in the scene graph collides 
@@ -146,8 +222,11 @@ module SkyShatter {
         public start() {            
             var tick = () => {
                 this.checkProjectileCollisionsAgainstEnemies();
+                this.checkEnemyCollidingWithPlayer();
                 this.update();
-                this.renderer.draw();
+                this.drawGame();
+                this.drawHUD();
+
                 window.requestAnimationFrame(tick);
             };
 
